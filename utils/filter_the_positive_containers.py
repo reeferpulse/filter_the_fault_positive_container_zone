@@ -20,6 +20,14 @@ from collections import Counter
 from sentence_transformers import SentenceTransformer, util
 from sklearn.metrics.pairwise import pairwise_distances
 import io
+session = boto3.session.Session(profile_name='nam_vnale')
+s3 = session.resource('s3')
+def read_csv(file_path,bucket_name = 'bucket-s3-co2-emission'):
+    obj = s3.Object(bucket_name, file_path)
+    data = obj.get()['Body'].read().decode('utf-8')
+    df =  pd.read_csv(io.StringIO(data),index_col=False)
+    return df
+
 model = SentenceTransformer('xlm-r-bert-base-nli-stsb-mean-tokens')
 conn = psycopg2.connect(
     user="reeferpulse",
@@ -27,6 +35,7 @@ conn = psycopg2.connect(
     host="dev-sea-inland.cfmvowtqgii4.eu-west-3.rds.amazonaws.com",
     password="neb3rxj!ukv7bub3NHC"
 )
+
 cur = conn.cursor()
 def filter_polygon_on_sea (wkt_str):
     cur.execute("select * from  bluepulse_is_onseaorwater_4326('"+wkt_str+"') ;")
